@@ -6,7 +6,7 @@ Matrix number wiring
 
     Top
      |
-	 |
+     |
      |
      |_ _ _ _ _ Right
     /
@@ -15,7 +15,7 @@ Matrix number wiring
 Front
 
 
-	_ _ _ _ _ _ _
+    _ _ _ _ _ _ _
    /            /|
   /|           / |
  /_|_ _ _ _ _ /  |
