@@ -1,5 +1,55 @@
 #include <Arduino.h>
 
+/**********************************************
+Matrix number wiring
+***********************************************
+
+    Top
+     |
+	 |
+     |
+     |_ _ _ _ _ Right
+    /
+   /
+  /
+Front
+
+
+	_ _ _ _ _ _ _
+   /            /|
+  /|           / |
+ /_|_ _ _ _ _ /  |
+|  |         |  <--------------------------
+|  | _ _ _ _ |_ _|                        |
+|  /         |  /                         |
+| /          | /                          |
+|/_ _ _ _ _ _|/                           |
+         ^                                |
+         |---                             |
+            |                             |
+Negative Panel                            |
+1  2  3  4  1  2  3  4                    |
+5  6  7  8  5  6  7  8              ^     |
+9  10 11 12 9 10  11 12             |     |
+13 14 15 16 13 14 15 16           Right   |
+17 18 19 20 17 18 19 20                   |
+21 22 23 24 21 22 23 24         <-Front   |
+25 26 27 28 25 26 27 28                   |
+29 30 31 32 29 30 31 32                   |
+                                          |
+             -----------------------------|
+             |
+Positive Panel
+31 31 29 29 32 32 30 30
+27 27 25 25 28 28 26 26             ^
+23 23 21 21 24 24 22 22             |
+19 19 17 17 20 20 18 18            Top
+15 15 13 13 16 16 14 14
+11 11 9  9  12 12 10 10           Front->
+7  7  5  5  8  8  6  6
+3  3  1  1  4  4  2  2
+**********************************************/
+
 enum  e_matrix_pin {
 	//connector 1
 	MATRIX_20 = 14,
@@ -245,6 +295,7 @@ void drawLayersApply(int layer[8][8][8])
 				if (layer[z][y][x] > 0)
 				{
 					drawLayerPxApply(7 - z, y, x);
+					//delay(1);
 				}
 			}
 		}
@@ -335,7 +386,64 @@ void init_matrix_pins()
 	}
 }
 
+int g_layers[8][8][8];
+
+
+void initLayers()
+{
+	for (int z = 0; z < 8; z++)
+	{
+		for (int y = 0; y < 8; z++)
+		{
+			for (int x = 0; x < 8; x++)
+			{
+				g_layers[z][y][x] = 0;
+			}
+		}
+	}
+}
+
+void serializeData(char *input, int len)
+{
+	int x;
+	int y;
+	int z = -1;
+	int current_deep = 0;
+
+	for (int i = 0; i < len && input[i] != '\0'; i++)
+	{
+		if (input[i] == '{')
+		{
+			if (current_deep == 1)
+			{
+				z++;
+			}
+			else if (current_deep = 2)
+			{
+				y++;
+			}
+			current_deep++;
+		}
+		if (input[i] == '}')
+		{
+			current_deep--;
+		}
+		if (input[i] == '0')
+		{
+			g_layers[z][y][x] = 0;
+			x++;
+		}
+		if (input[i] == '1')
+		{
+			g_layers[z][y][x] = 1;
+			x++;
+		}
+	}
+}
+
 void setup() {
+	Serial.setTimeout(10);
+	//serializeData("GG");
 	Serial.begin(115200);
 	Serial.println("Begin");
 	//init_matrix_pins();
@@ -344,7 +452,19 @@ void setup() {
 	Serial.println("End");
 }
 
-void loop() {
+String tmpSerialString;
+char *tmpSerialArray;
 
+void loop() {
+	if (Serial.available() > 0)
+	{
+		tmpSerialString = Serial.readString();
+		if (tmpSerialString.startsWith("[data]"))
+		{
+			tmpSerialString.toCharArray(tmpSerialArray, tmpSerialString.length());
+			serializeData(tmpSerialArray, tmpSerialString.length());
+		}
+	}
+	//Serial.println(".");
 	drawLayersApply(layers_test);
 }
