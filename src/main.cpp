@@ -153,11 +153,15 @@ void setPixelOn(int a, int b)
 	Serial.print("Pixel + :");
 	Serial.println(b);
 
-	if (g_matrix_table[a].state_matrix_pin == DISCONNECTED && (g_matrix_table[b].state_matrix_pin == DISCONNECTED || g_matrix_table[b].state_matrix_pin == LED_HIGH))
+	if (g_matrix_table[a].state_matrix_pin == DISCONNECTED
+	&& (g_matrix_table[b].state_matrix_pin == DISCONNECTED
+		|| g_matrix_table[b].state_matrix_pin == LED_HIGH))
 	{
 		g_matrix_table[a].state_matrix_pin = LED_LOW;
 	}
-	if (g_matrix_table[b].state_matrix_pin == DISCONNECTED && (g_matrix_table[a].state_matrix_pin == DISCONNECTED || g_matrix_table[a].state_matrix_pin == LED_LOW))
+	if (g_matrix_table[b].state_matrix_pin == DISCONNECTED
+	&& (g_matrix_table[a].state_matrix_pin == DISCONNECTED
+		|| g_matrix_table[a].state_matrix_pin == LED_LOW))
 	{
 		g_matrix_table[b].state_matrix_pin = LED_HIGH;
 	}
@@ -452,17 +456,17 @@ void setup() {
 	Serial.println("End");
 }
 
-String tmpSerialString;
-char *tmpSerialArray;
+String g_tmpSerialString;
+char *g_tmpSerialArray;
 
 void loop() {
 	if (Serial.available() > 0)
 	{
-		tmpSerialString = Serial.readString();
-		if (tmpSerialString.startsWith("[data]"))
+		g_tmpSerialString = Serial.readString();
+		if (g_tmpSerialString.startsWith("[data]"))
 		{
-			tmpSerialString.toCharArray(tmpSerialArray, tmpSerialString.length());
-			serializeData(tmpSerialArray, tmpSerialString.length());
+			g_tmpSerialString.toCharArray(g_tmpSerialArray, g_tmpSerialString.length());
+			serializeData(g_tmpSerialArray, g_tmpSerialString.length());
 		}
 	}
 	//Serial.println(".");
