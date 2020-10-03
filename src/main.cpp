@@ -145,6 +145,8 @@ static t_matrix_table g_matrix_table[32] = {
 	(t_matrix_table){MATRIX_32, 32, 0},
 };
 
+int g_layers[8][8][8];
+
 
 void setPixelOn(int a, int b)
 {
@@ -204,6 +206,15 @@ void drawLayerPxApply(int x, int y, int z)
 	static int tmpb = -1;
 	int a;
 	int b;
+
+	if ((x < 0 || x > 7 || y < 0 || y > 7 || z < 0 || z > 7) && !(tmpa > -1 && tmpb > -1))
+	{
+		pinMode(g_matrix_table[tmpa].enum_matrix_pin, INPUT);
+		pinMode(g_matrix_table[tmpb].enum_matrix_pin, INPUT);
+		tmpa = -1;
+		tmpb = -1;
+		return ;
+	}
 
 	a = (7 - x) % 4 + (7 - z) * 4;
 	b = (7 - y) * 4;
@@ -296,7 +307,7 @@ void drawLayersApply(int layer[8][8][8])
 		{
 			for (int x = 0; x < 8;x++)
 			{
-				if (layer[z][y][x] > 0)
+				if (g_layers[z][y][x] > 0)
 				{
 					drawLayerPxApply(7 - z, y, x);
 					//delay(1);
@@ -390,14 +401,12 @@ void init_matrix_pins()
 	}
 }
 
-int g_layers[8][8][8];
-
 
 void initLayers()
 {
 	for (int z = 0; z < 8; z++)
 	{
-		for (int y = 0; y < 8; z++)
+		for (int y = 0; y < 8; y++)
 		{
 			for (int x = 0; x < 8; x++)
 			{
@@ -409,21 +418,25 @@ void initLayers()
 
 void serializeData(char *input, int len)
 {
-	int x;
-	int y;
+	int x = 0;
+	int y = -1;
 	int z = -1;
 	int current_deep = 0;
 
-	for (int i = 0; i < len && input[i] != '\0'; i++)
+
+	for (int i = 0; i < len; i++)
 	{
+		//Serial.println(".");
 		if (input[i] == '{')
 		{
 			if (current_deep == 1)
 			{
+				y = -1;
 				z++;
 			}
-			else if (current_deep = 2)
+			else if (current_deep == 2)
 			{
+				x = 0;
 				y++;
 			}
 			current_deep++;
@@ -451,10 +464,28 @@ void setup() {
 	Serial.begin(115200);
 	Serial.println("Begin");
 	//init_matrix_pins();
+	initLayers();
 	resetPins();
 	//drawLayers(layers_test);
 	Serial.println("End");
 }
+
+void serialPrintLayers()
+{
+	for (int z = 0; z < 8; z++)
+	{
+		for (int y = 0; y < 8; y++)
+		{
+			for (int x = 0; x < 8; x++)
+			{
+				Serial.print(g_layers[z][y][x]);
+			}
+			Serial.println();
+		}
+		Serial.println();
+	}
+}
+
 
 String g_tmpSerialString;
 char *g_tmpSerialArray;
@@ -465,10 +496,21 @@ void loop() {
 		g_tmpSerialString = Serial.readString();
 		if (g_tmpSerialString.startsWith("[data]"))
 		{
+			//Clear leds
+			//Serial.print("data received :");
+			//Serial.println(g_tmpSerialArray);
+			if (g_tmpSerialArray)
+			{
+				free(g_tmpSerialArray);
+			}
+			g_tmpSerialArray = (char*)malloc(sizeof(char) *  g_tmpSerialString.length());
 			g_tmpSerialString.toCharArray(g_tmpSerialArray, g_tmpSerialString.length());
 			serializeData(g_tmpSerialArray, g_tmpSerialString.length());
+			//serialPrintLayers();
+
 		}
 	}
 	//Serial.println(".");
 	drawLayersApply(layers_test);
+	drawLayerPxApply(-1, -1 , -1);// Clear leds
 }
